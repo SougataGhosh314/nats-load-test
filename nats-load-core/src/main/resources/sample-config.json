@@ -1,0 +1,8 @@
+{
+  "tps": 100,
+  "durationSeconds": 10,
+  "targetSubject": "user.create.v1",
+  "payloads": [
+    "ewogICJ1c2VybmFtZSI6ICJqb2huZG9lIiwKICAiZW1haWwiOiAiam9obkBleGFtcGxlLmNvbSIKfQ=="
+  ]
+}

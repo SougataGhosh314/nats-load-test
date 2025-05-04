@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+group = 'com.sougata'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(19)
+	}
+}
+
+
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+}
+
+dependencies {
+
+	compileOnly("org.projectlombok:lombok:1.18.38")
+	annotationProcessor("org.projectlombok:lombok:1.18.38")
+
+	implementation project(':nats-load-core')
+	implementation 'com.google.protobuf:protobuf-java:3.25.1'
+	implementation('com.sougata:nats-core-components:1.0.0-RELEASE')
+	implementation('com.sougata.userprotos:user-protos:1.0.0-RELEASE')
+	implementation 'io.nats:jnats:2.19.1'
+	implementation 'org.slf4j:slf4j-simple:2.0.9'
+}
+
+application {
+	mainClass = 'com.sougata.natsloadrunner.RunUserCreateTest'
+}
+
+jar {
+	manifest {
+		attributes 'Main-Class': 'com.sougata.natsloadrunner.RunUserCreateTest'
+	}
+}
+
+tasks.register('runLoadTest', JavaExec) {
+	group = 'verification'
+	description = 'Runs the NATS load test'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.yourpackage.RunUserCreateTest'
+}

@@ -1,0 +1,15 @@
+{
+  "testName": "user-create-test",
+  "durationSeconds": 10,
+  "targetTps": 100,
+  "testClientClass": "com.sougata.natsloadrunner.client.UserCreateTestClient",
+  "clientConfig": {
+    "requestSubject": "user.create",
+    "responseSubject": "user.response",
+    "natsUrl": "nats://localhost:4222"
+  },
+  "headersToTrack": [
+    "correlationId",
+    "creationTs"
+  ]
+}
