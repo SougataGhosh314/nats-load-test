@@ -86,4 +86,17 @@ public class UserCreateTestClient implements LoadTestClient {
         wrapper.getPayloadHeaders().forEach((k, v) -> headers.add(k.getKey(), v));
         return headers;
     }
+
+    @Override
+    public void close() {
+        closeNatsConnection();
+    }
+
+    public void closeNatsConnection() {
+        try {
+            this.natsConnection.close();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

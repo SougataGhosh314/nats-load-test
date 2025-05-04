@@ -7,6 +7,8 @@ import com.sougata.natsloadcore.generator.RateLimitedLoadGenerator;
 import com.sougata.natsloadcore.metrics.MetricsCollector;
 import com.sougata.natsloadcore.model.LoadTestResult;
 
+import java.util.Set;
+
 public class LoadTestRunner {
 
     private LoadTestConfig config;

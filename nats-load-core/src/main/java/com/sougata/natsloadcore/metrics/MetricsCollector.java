@@ -3,6 +3,7 @@ package com.sougata.natsloadcore.metrics;
 import com.sougata.natsloadcore.config.LoadTestConfig;
 import com.sougata.natsloadcore.model.LoadTestResult;
 import com.sougata.natsloadcore.model.Result;
+import org.HdrHistogram.ConcurrentHistogram;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,12 +14,13 @@ public class MetricsCollector {
     private final LongAdder totalLatencyMicros = new LongAdder();
     private final AtomicInteger successCount = new AtomicInteger();
     private final AtomicInteger errorCount = new AtomicInteger();
-    private final List<Long> latenciesInMicros = Collections.synchronizedList(new ArrayList<>());
+    private final ConcurrentHistogram histogram = new ConcurrentHistogram(3);
+
 
     public void recordSuccess(long latencyMicros) {
         totalLatencyMicros.add(latencyMicros);
         successCount.incrementAndGet();
-        latenciesInMicros.add(latencyMicros);
+        histogram.recordValue(latencyMicros);
     }
 
     public void recordError() {
@@ -49,7 +51,7 @@ public class MetricsCollector {
 
         testResult.setAverageLatencyInMillis(success == 0 ? 0 : totalLatencyInMillis/success);
         testResult.setSustainedThroughput(success / (double) loadTestConfig.getDurationSeconds());
-        testResult.setLatencyPercentiles(computePercentiles(latenciesInMicros));
+        testResult.setLatencyPercentiles(computePercentiles());
 
         double dropPercent = 100.0 * (expectedTotalRequests - success) / expectedTotalRequests;
         testResult.setThroughputDropPercent(Math.max(0, dropPercent));
@@ -58,23 +60,15 @@ public class MetricsCollector {
         return loadTestResult;
     }
 
-    private Map<String, Float> computePercentiles(List<Long> latenciesInMicros) {
-        List<Long> sorted = new ArrayList<>(latenciesInMicros);
-        Collections.sort(sorted);
+    private Map<String, Float> computePercentiles() {
         Map<String, Float> result = new LinkedHashMap<>();
-        int[] percentiles = {50, 60, 75, 90, 95, 99};
+        int[] percentiles = {50, 60, 75, 90, 95, 99, 99_9};
 
         for (int p : percentiles) {
-            int index = (int) Math.ceil(p / 100.0 * sorted.size()) - 1;
-            if (index >= 0 && index < sorted.size()) {
-                float latencyMillis = sorted.get(index) / 1000.0f; // precise float division
-                result.put("p" + p, latencyMillis);
-            } else {
-                result.put("p" + p, -1F);
-            }
+            double valueMicros = histogram.getValueAtPercentile(p);
+            result.put("p" + (p == 99_9 ? "99.9" : p), (float) (valueMicros / 1000.0)); // to millis
         }
 
         return result;
     }
-
 }

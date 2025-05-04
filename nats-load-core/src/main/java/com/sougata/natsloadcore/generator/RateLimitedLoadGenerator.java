@@ -18,7 +18,7 @@ public class RateLimitedLoadGenerator {
         LoadTestClient client = createClient(config, metricsCollector, correlationTracker);
 
         int tps = config.getTargetTps();
-        long intervalMillis = 1000L / tps;
+        long intervalMicros = 1000000L / tps;
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -31,18 +31,20 @@ public class RateLimitedLoadGenerator {
             }
         };
 
-        scheduler.scheduleAtFixedRate(task, 0, intervalMillis, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(task, 0, intervalMicros, TimeUnit.MICROSECONDS);
 
         // Schedule a delayed shutdown after test duration
-        Executors.newSingleThreadScheduledExecutor().schedule(scheduler::shutdown, config.getDurationSeconds(), TimeUnit.SECONDS);
+        scheduleShutdown(scheduler, config.getDurationSeconds() + 1, client);
 
         // Wait for termination with a timeout (e.g. +10 seconds buffer)
         try {
-            if (!scheduler.awaitTermination(config.getDurationSeconds() + 10, TimeUnit.SECONDS)) {
+            if (!scheduler.awaitTermination(config.getDurationSeconds() + 5, TimeUnit.SECONDS)) {
                 scheduler.shutdownNow(); // Force if not terminated
+                client.close();
             }
         } catch (InterruptedException e) {
             scheduler.shutdownNow();
+            client.close();
             Thread.currentThread().interrupt();
         }
 
@@ -51,6 +53,14 @@ public class RateLimitedLoadGenerator {
 
         return metricsCollector;
     }
+
+    private void scheduleShutdown(ScheduledExecutorService executor, int delaySeconds, LoadTestClient client) {
+        executor.schedule(() -> {
+            executor.shutdown();
+            client.close();
+        }, delaySeconds, TimeUnit.SECONDS);
+    }
+
 
     private LoadTestClient createClient(LoadTestConfig config, MetricsCollector metricsCollector, CorrelationTracker correlationTracker) {
         try {
