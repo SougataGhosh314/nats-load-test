@@ -34,7 +34,7 @@ public class RateLimitedLoadGenerator {
         scheduler.scheduleAtFixedRate(task, 0, intervalMicros, TimeUnit.MICROSECONDS);
 
         // Schedule a delayed shutdown after test duration
-        scheduleShutdown(scheduler, config.getDurationSeconds() + 1, client);
+        scheduleShutdown(scheduler, config.getDurationSeconds(), client);
 
         // Wait for termination with a timeout (e.g. +10 seconds buffer)
         try {
